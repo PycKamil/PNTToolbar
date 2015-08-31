@@ -54,8 +54,8 @@ static const CGFloat AGRModalWindowNavigationBarHeight = 44.0f;
         self.items = @[_barButtonItemPrevious, _barButtonItemNext, _barButtonItemSpace, _barButtonItemDone];
 
         [[NSNotificationCenter defaultCenter] addObserver:self
-                                                 selector:@selector(keyboardWasShown:)
-                                                     name:UIKeyboardDidShowNotification
+                                                 selector:@selector(keyboardWillShow:)
+                                                     name:UIKeyboardWillShowNotification
                                                    object:nil];
         [[NSNotificationCenter defaultCenter] addObserver:self
                                                  selector:@selector(keyboardWillBeHidden:)
@@ -67,7 +67,7 @@ static const CGFloat AGRModalWindowNavigationBarHeight = 44.0f;
 
 - (void)dealloc {
     
-    [[NSNotificationCenter defaultCenter] removeObserver:self name:UIKeyboardDidShowNotification object:nil];
+    [[NSNotificationCenter defaultCenter] removeObserver:self name:UIKeyboardWillShowNotification object:nil];
     [[NSNotificationCenter defaultCenter] removeObserver:self name:UIKeyboardWillHideNotification object:nil];
 }
 
@@ -125,10 +125,8 @@ static const CGFloat AGRModalWindowNavigationBarHeight = 44.0f;
     self.mainScrollView.scrollIndicatorInsets = contentInsets;
 }
 
-- (void)keyboardWasShown:(NSNotification *)aNotification {
+- (void)keyboardWillShow:(NSNotification *)aNotification {
 
-    CGRect keyboardEndFrame = [aNotification.userInfo[UIKeyboardFrameEndUserInfoKey] CGRectValue];
-    self.keyboardFrame = [self.mainScrollView.superview convertRect:keyboardEndFrame fromView:nil];
     UIViewAnimationCurve curve = [aNotification.userInfo[UIKeyboardAnimationCurveUserInfoKey] unsignedIntegerValue];
     UIViewAnimationOptions options = (curve << 16) | UIViewAnimationOptionBeginFromCurrentState;
     NSTimeInterval duration = [aNotification.userInfo[UIKeyboardAnimationDurationUserInfoKey] doubleValue];
@@ -158,8 +156,8 @@ static const CGFloat AGRModalWindowNavigationBarHeight = 44.0f;
 - (CGFloat)keyboardHeightFromNotification:(NSNotification *)aNotification {
 
     NSDictionary *info = aNotification.userInfo;
-    CGSize keyboardSize = [info[UIKeyboardFrameBeginUserInfoKey] CGRectValue].size;
-
+    CGSize keyboardSize = [info[UIKeyboardFrameEndUserInfoKey] CGRectValue].size;
+    self.keyboardFrame = [info[UIKeyboardFrameEndUserInfoKey] CGRectValue];
     return keyboardSize.width > keyboardSize.height ? keyboardSize.height : keyboardSize.width;
 }
 
