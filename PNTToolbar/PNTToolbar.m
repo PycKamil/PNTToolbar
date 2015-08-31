@@ -23,6 +23,9 @@
 
 #import "PNTToolbar.h"
 
+static const CGFloat AGRModalWindowHeightForLegacyOS = 620.0f;// Temporary fix, only for iOS7.
+static const CGFloat AGRModalWindowNavigationBarHeight = 44.0f;
+
 @interface PNTToolbar () <UITextFieldDelegate>
 
 @property (assign, nonatomic) BOOL shouldReturnActivated;
@@ -44,20 +47,28 @@
     
     self = [super initWithFrame:frame];
     if (self) {
-        _barButtonItemPrevious = [[UIBarButtonItem alloc] initWithTitle:NSLocalizedString(@"Previous", nil) style:UIBarButtonItemStyleBordered target:self action:@selector(barButtonItemPreviousTouchUpInside:)] ;
-        _barButtonItemNext = [[UIBarButtonItem alloc] initWithTitle:NSLocalizedString(@"Next", nil) style:UIBarButtonItemStyleBordered target:self action:@selector(barButtonItemNextTouchUpInside:)];
+        _barButtonItemPrevious = [[UIBarButtonItem alloc] initWithTitle:@" < " style:UIBarButtonItemStyleBordered target:self action:@selector(barButtonItemPreviousTouchUpInside:)] ;
+        _barButtonItemNext = [[UIBarButtonItem alloc] initWithTitle:@" > " style:UIBarButtonItemStyleBordered target:self action:@selector(barButtonItemNextTouchUpInside:)];
         _barButtonItemSpace = [[UIBarButtonItem alloc] initWithBarButtonSystemItem:UIBarButtonSystemItemFlexibleSpace target:nil action:nil];
         _barButtonItemDone = [[UIBarButtonItem alloc] initWithBarButtonSystemItem:UIBarButtonSystemItemDone target:self action:@selector(barButtonItemDoneTouchUpInside:)];
         self.items = @[_barButtonItemPrevious, _barButtonItemNext, _barButtonItemSpace, _barButtonItemDone];
 
-        [[NSNotificationCenter defaultCenter] addObserver:self selector:@selector(keyboardWillChangeFrame:) name:UIKeyboardWillChangeFrameNotification object:nil];
+        [[NSNotificationCenter defaultCenter] addObserver:self
+                                                 selector:@selector(keyboardWasShown:)
+                                                     name:UIKeyboardDidShowNotification
+                                                   object:nil];
+        [[NSNotificationCenter defaultCenter] addObserver:self
+                                                 selector:@selector(keyboardWillBeHidden:)
+                                                     name:UIKeyboardWillHideNotification
+                                                   object:nil];
     }
     return self;
 }
 
 - (void)dealloc {
     
-    [[NSNotificationCenter defaultCenter] removeObserver:self name:UIKeyboardWillChangeFrameNotification object:nil];
+    [[NSNotificationCenter defaultCenter] removeObserver:self name:UIKeyboardDidShowNotification object:nil];
+    [[NSNotificationCenter defaultCenter] removeObserver:self name:UIKeyboardWillHideNotification object:nil];
 }
 
 + (PNTToolbar *)defaultToolbar {
@@ -107,19 +118,29 @@
 
 #pragma mark - Keyboard methods
 
-- (void)keyboardWillChangeFrame:(NSNotification *)notification {
-    
-    CGRect keyboardEndFrame = [notification.userInfo[UIKeyboardFrameEndUserInfoKey] CGRectValue];
+
+- (void)keyboardWillBeHidden:(NSNotification *)aNotification {
+    UIEdgeInsets contentInsets = UIEdgeInsetsZero;
+    self.mainScrollView.contentInset = contentInsets;
+    self.mainScrollView.scrollIndicatorInsets = contentInsets;
+}
+
+- (void)keyboardWasShown:(NSNotification *)aNotification {
+
+    CGRect keyboardEndFrame = [aNotification.userInfo[UIKeyboardFrameEndUserInfoKey] CGRectValue];
     self.keyboardFrame = [self.mainScrollView.superview convertRect:keyboardEndFrame fromView:nil];
-    UIViewAnimationCurve curve = [notification.userInfo[UIKeyboardAnimationCurveUserInfoKey] unsignedIntegerValue];
+    UIViewAnimationCurve curve = [aNotification.userInfo[UIKeyboardAnimationCurveUserInfoKey] unsignedIntegerValue];
     UIViewAnimationOptions options = (curve << 16) | UIViewAnimationOptionBeginFromCurrentState;
-    NSTimeInterval duration = [notification.userInfo[UIKeyboardAnimationDurationUserInfoKey] doubleValue];
-    
-    CGRect newFrame = self.mainScrollView.frame;
-    newFrame.size.height = self.keyboardFrame.origin.y - newFrame.origin.y;         
-    
+    NSTimeInterval duration = [aNotification.userInfo[UIKeyboardAnimationDurationUserInfoKey] doubleValue];
+
+    CGFloat keyboardHeight = [self keyboardHeightFromNotification:aNotification];
+    CGFloat additionalSpace = [self additionalSpace];
+
+    CGFloat bottomInset = keyboardHeight - additionalSpace;
+    UIEdgeInsets contentInsets = UIEdgeInsetsMake(0.0f, 0.0f, bottomInset, 0.0f);
     [UIView animateWithDuration:duration delay:0.0 options:options animations:^{
-        self.mainScrollView.frame = newFrame;
+        self.mainScrollView.scrollIndicatorInsets = contentInsets;
+        self.mainScrollView.contentInset = contentInsets;
     } completion:^(BOOL finished) {
         NSUInteger indexOfActiveTextFiled = [self.inputFields indexOfObjectPassingTest:^BOOL(UITextField *textField, NSUInteger idx, BOOL* stop) {
             return textField.isFirstResponder;
@@ -130,8 +151,55 @@
             [self scrollRectToVisible:frameToScroll animated:YES];
         }
     }];
+
+
 }
 
+- (CGFloat)keyboardHeightFromNotification:(NSNotification *)aNotification {
+
+    NSDictionary *info = aNotification.userInfo;
+    CGSize keyboardSize = [info[UIKeyboardFrameBeginUserInfoKey] CGRectValue].size;
+
+    return keyboardSize.width > keyboardSize.height ? keyboardSize.height : keyboardSize.width;
+}
+
+- (CGFloat)additionalSpace {
+
+    CGFloat scrollViewSuperviewHeight = CGRectGetHeight(self.mainScrollView.superview.frame);
+    CGFloat scrollViewHeight = CGRectGetHeight(self.mainScrollView.frame);
+
+    return scrollViewSuperviewHeight - scrollViewHeight + [self positionFromBottom];
+}
+
+- (CGFloat)superviewHeightForLegacyOS NS_DEPRECATED_IOS(7_0, 8_0) {
+    return AGRModalWindowHeightForLegacyOS;
+}
+
+- (CGFloat)superviewNavigationBarHeightForLegacyOS NS_DEPRECATED_IOS(7_0, 8_0) {
+    return 0.0f;
+}
+
+- (CGFloat)positionFromBottom {
+
+    if (UI_USER_INTERFACE_IDIOM() == UIUserInterfaceIdiomPhone) {
+        return 0.0f;
+    }
+
+    BOOL isLegacyOS =  (floor(NSFoundationVersionNumber) <= NSFoundationVersionNumber_iOS_7_1);
+
+    BOOL isLandscapeAndLegacy
+    = UIInterfaceOrientationIsLandscape([UIApplication sharedApplication].statusBarOrientation) && isLegacyOS;
+
+    CGRect statusBarFrame = [UIApplication sharedApplication].statusBarFrame;
+    CGFloat statusBarHeight = isLandscapeAndLegacy ? statusBarFrame.size.width : statusBarFrame.size.height;
+
+    CGFloat superviewHeight = isLegacyOS ? [self superviewHeightForLegacyOS] : self.mainScrollView.superview.bounds.size.height;
+    CGFloat navigationBarHeight = isLegacyOS ? [self superviewNavigationBarHeightForLegacyOS]
+    : AGRModalWindowNavigationBarHeight;
+
+    CGFloat windowHeight = isLandscapeAndLegacy ? self.window.bounds.size.width : self.window.bounds.size.height;
+    return windowHeight - superviewHeight - navigationBarHeight - statusBarHeight;
+}
 
 #pragma mark - Button methods
 
