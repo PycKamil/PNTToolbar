@@ -44,13 +44,24 @@ static const CGFloat AGRModalWindowNavigationBarHeight = 44.0f;
 #pragma mark - Object lifecycle
 
 - (id)initWithFrame:(CGRect)frame {
-    
+
     self = [super initWithFrame:frame];
     if (self) {
-        _barButtonItemPrevious = [[UIBarButtonItem alloc] initWithTitle:@" < " style:UIBarButtonItemStyleBordered target:self action:@selector(barButtonItemPreviousTouchUpInside:)] ;
-        _barButtonItemNext = [[UIBarButtonItem alloc] initWithTitle:@" > " style:UIBarButtonItemStyleBordered target:self action:@selector(barButtonItemNextTouchUpInside:)];
-        _barButtonItemSpace = [[UIBarButtonItem alloc] initWithBarButtonSystemItem:UIBarButtonSystemItemFlexibleSpace target:nil action:nil];
-        _barButtonItemDone = [[UIBarButtonItem alloc] initWithBarButtonSystemItem:UIBarButtonSystemItemDone target:self action:@selector(barButtonItemDoneTouchUpInside:)];
+        _barButtonItemPrevious = [[UIBarButtonItem alloc] initWithTitle:@" < "
+                                                                  style:UIBarButtonItemStyleBordered
+                                                                 target:self
+                                                                 action:@selector(barButtonItemPreviousTouchUpInside:)];
+        _barButtonItemNext = [[UIBarButtonItem alloc] initWithTitle:@" > "
+                                                              style:UIBarButtonItemStyleBordered
+                                                             target:self
+                                                             action:@selector(barButtonItemNextTouchUpInside:)];
+        _barButtonItemSpace = [[UIBarButtonItem alloc] initWithBarButtonSystemItem:UIBarButtonSystemItemFlexibleSpace
+                                                                            target:nil
+                                                                            action:nil];
+        _barButtonItemDone =
+            [[UIBarButtonItem alloc] initWithBarButtonSystemItem:UIBarButtonSystemItemDone
+                                                          target:self
+                                                          action:@selector(barButtonItemDoneTouchUpInside:)];
         self.items = @[_barButtonItemPrevious, _barButtonItemNext, _barButtonItemSpace, _barButtonItemDone];
 
         [[NSNotificationCenter defaultCenter] addObserver:self
@@ -66,23 +77,30 @@ static const CGFloat AGRModalWindowNavigationBarHeight = 44.0f;
 }
 
 - (void)dealloc {
-    
+
     [[NSNotificationCenter defaultCenter] removeObserver:self name:UIKeyboardWillShowNotification object:nil];
     [[NSNotificationCenter defaultCenter] removeObserver:self name:UIKeyboardWillHideNotification object:nil];
 }
 
 + (PNTToolbar *)defaultToolbar {
-    
+
     PNTToolbar *toolbar = [[PNTToolbar alloc] initWithFrame:CGRectMake(0.0f, 0.0f, 320.0f, 44.0f)];
     toolbar.barStyle = UIBarStyleDefault;
     return toolbar;
 }
 
-
 #pragma mark - Setter methods
 
+- (void)setNextButtonTitle:(NSString *)nextTitle {
+    _barButtonItemNext.title = nextTitle;
+}
+
+- (void)setPreviousButtonTitle:(NSString *)previousTitle {
+    _barButtonItemPrevious.title = previousTitle;
+}
+
 - (void)setInputFields:(NSArray *)inputFields {
-    
+
     _inputFields = inputFields;
     NSMutableArray *delegates = [NSMutableArray array];
     for (UITextField *textField in inputFields) {
@@ -115,9 +133,7 @@ static const CGFloat AGRModalWindowNavigationBarHeight = 44.0f;
     }
 }
 
-
 #pragma mark - Keyboard methods
-
 
 - (void)keyboardWillBeHidden:(NSNotification *)aNotification {
     UIEdgeInsets contentInsets = UIEdgeInsetsZero;
@@ -136,21 +152,24 @@ static const CGFloat AGRModalWindowNavigationBarHeight = 44.0f;
 
     CGFloat bottomInset = keyboardHeight - additionalSpace;
     UIEdgeInsets contentInsets = UIEdgeInsetsMake(0.0f, 0.0f, bottomInset, 0.0f);
-    [UIView animateWithDuration:duration delay:0.0 options:options animations:^{
-        self.mainScrollView.scrollIndicatorInsets = contentInsets;
-        self.mainScrollView.contentInset = contentInsets;
-    } completion:^(BOOL finished) {
-        NSUInteger indexOfActiveTextFiled = [self.inputFields indexOfObjectPassingTest:^BOOL(UITextField *textField, NSUInteger idx, BOOL* stop) {
-            return textField.isFirstResponder;
-        }];
-        if (indexOfActiveTextFiled != NSNotFound) {
-            UITextField *textField = self.inputFields[indexOfActiveTextFiled];
-            CGRect frameToScroll = [self.mainScrollView convertRect:textField.frame fromView:textField.superview];
-            [self scrollRectToVisible:frameToScroll animated:YES];
+    [UIView animateWithDuration:duration
+        delay:0.0
+        options:options
+        animations:^{
+          self.mainScrollView.scrollIndicatorInsets = contentInsets;
+          self.mainScrollView.contentInset = contentInsets;
         }
-    }];
-
-
+        completion:^(BOOL finished) {
+          NSUInteger indexOfActiveTextFiled =
+              [self.inputFields indexOfObjectPassingTest:^BOOL(UITextField *textField, NSUInteger idx, BOOL *stop) {
+                return textField.isFirstResponder;
+              }];
+          if (indexOfActiveTextFiled != NSNotFound) {
+              UITextField *textField = self.inputFields[indexOfActiveTextFiled];
+              CGRect frameToScroll = [self.mainScrollView convertRect:textField.frame fromView:textField.superview];
+              [self scrollRectToVisible:frameToScroll animated:YES];
+          }
+        }];
 }
 
 - (CGFloat)keyboardHeightFromNotification:(NSNotification *)aNotification {
@@ -183,17 +202,18 @@ static const CGFloat AGRModalWindowNavigationBarHeight = 44.0f;
         return 0.0f;
     }
 
-    BOOL isLegacyOS =  (floor(NSFoundationVersionNumber) <= NSFoundationVersionNumber_iOS_7_1);
+    BOOL isLegacyOS = (floor(NSFoundationVersionNumber) <= NSFoundationVersionNumber_iOS_7_1);
 
     BOOL isLandscapeAndLegacy
-    = UIInterfaceOrientationIsLandscape([UIApplication sharedApplication].statusBarOrientation) && isLegacyOS;
+        = UIInterfaceOrientationIsLandscape([UIApplication sharedApplication].statusBarOrientation) && isLegacyOS;
 
     CGRect statusBarFrame = [UIApplication sharedApplication].statusBarFrame;
     CGFloat statusBarHeight = isLandscapeAndLegacy ? statusBarFrame.size.width : statusBarFrame.size.height;
 
-    CGFloat superviewHeight = isLegacyOS ? [self superviewHeightForLegacyOS] : self.mainScrollView.superview.bounds.size.height;
+    CGFloat superviewHeight = isLegacyOS ? [self superviewHeightForLegacyOS]
+                                         : self.mainScrollView.superview.bounds.size.height;
     CGFloat navigationBarHeight = isLegacyOS ? [self superviewNavigationBarHeightForLegacyOS]
-    : AGRModalWindowNavigationBarHeight;
+                                             : AGRModalWindowNavigationBarHeight;
 
     CGFloat windowHeight = isLandscapeAndLegacy ? self.window.bounds.size.width : self.window.bounds.size.height;
     return windowHeight - superviewHeight - navigationBarHeight - statusBarHeight;
@@ -202,37 +222,38 @@ static const CGFloat AGRModalWindowNavigationBarHeight = 44.0f;
 #pragma mark - Button methods
 
 - (void)barButtonItemPreviousTouchUpInside:(id)sender {
-    
-    NSUInteger indexOfActiveTextFiled = [self.inputFields indexOfObjectPassingTest:^BOOL(UITextField *textField, NSUInteger idx, BOOL* stop) {
-        return textField.isFirstResponder;
-    }];
+
+    NSUInteger indexOfActiveTextFiled =
+        [self.inputFields indexOfObjectPassingTest:^BOOL(UITextField *textField, NSUInteger idx, BOOL *stop) {
+          return textField.isFirstResponder;
+        }];
     if (indexOfActiveTextFiled > 0) {
         [self.inputFields[indexOfActiveTextFiled - 1] becomeFirstResponder];
     }
 }
 
 - (void)barButtonItemNextTouchUpInside:(id)sender {
-    
-    NSUInteger indexOfActiveTextFiled = [self.inputFields indexOfObjectPassingTest:^BOOL(UITextField *textField, NSUInteger idx, BOOL* stop) {
-        return textField.isFirstResponder;
-    }];
+
+    NSUInteger indexOfActiveTextFiled =
+        [self.inputFields indexOfObjectPassingTest:^BOOL(UITextField *textField, NSUInteger idx, BOOL *stop) {
+          return textField.isFirstResponder;
+        }];
     if (indexOfActiveTextFiled < self.inputFields.count - 1) {
         [self.inputFields[indexOfActiveTextFiled + 1] becomeFirstResponder];
     }
 }
 
 - (void)barButtonItemDoneTouchUpInside:(id)sender {
-    
+
     for (UITextField *textField in self.inputFields) {
         [textField resignFirstResponder];
     }
 }
 
-
 #pragma mark - UITextFieldDelegate methods
 
 - (void)textFieldDidBeginEditing:(UITextField *)textField {
-    
+
     CGRect frameToScroll = [self.mainScrollView convertRect:textField.frame fromView:textField.superview];
     [self scrollRectToVisible:frameToScroll animated:YES];
 
@@ -243,25 +264,30 @@ static const CGFloat AGRModalWindowNavigationBarHeight = 44.0f;
 }
 
 - (void)textFieldDidEndEditing:(UITextField *)textField {
-    
+
     NSUInteger index = [self.inputFields indexOfObject:textField];
     if ([self.inputFieldsDelegates[index] respondsToSelector:@selector(textFieldDidEndEditing:)]) {
         [self.inputFieldsDelegates[index] textFieldDidEndEditing:textField];
     }
 }
 
-- (BOOL)textField:(UITextField *)textField shouldChangeCharactersInRange:(NSRange)range replacementString:(NSString *)string {
-    
+- (BOOL)textField:(UITextField *)textField
+    shouldChangeCharactersInRange:(NSRange)range
+                replacementString:(NSString *)string {
+
     NSUInteger index = [self.inputFields indexOfObject:textField];
-    if ([self.inputFieldsDelegates[index] respondsToSelector:@selector(textField:shouldChangeCharactersInRange:replacementString:)]) {
-        return [self.inputFieldsDelegates[index] textField:textField shouldChangeCharactersInRange:range replacementString:string];
+    if ([self.inputFieldsDelegates[index]
+            respondsToSelector:@selector(textField:shouldChangeCharactersInRange:replacementString:)]) {
+        return [self.inputFieldsDelegates[index] textField:textField
+                             shouldChangeCharactersInRange:range
+                                         replacementString:string];
     } else {
         return YES;
     }
 }
 
 - (BOOL)textFieldShouldBeginEditing:(UITextField *)textField {
-    
+
     NSUInteger index = [self.inputFields indexOfObject:textField];
     if ([self.inputFieldsDelegates[index] respondsToSelector:@selector(textFieldShouldBeginEditing:)]) {
         return [self.inputFieldsDelegates[index] textFieldShouldBeginEditing:textField];
@@ -271,7 +297,7 @@ static const CGFloat AGRModalWindowNavigationBarHeight = 44.0f;
 }
 
 - (BOOL)textFieldShouldEndEditing:(UITextField *)textField {
-    
+
     BOOL shouldEndEditing = NO;
     NSUInteger index = [self.inputFields indexOfObject:textField];
     if ([self.inputFieldsDelegates[index] respondsToSelector:@selector(textFieldShouldEndEditing:)]) {
@@ -289,7 +315,7 @@ static const CGFloat AGRModalWindowNavigationBarHeight = 44.0f;
 }
 
 - (BOOL)textFieldShouldClear:(UITextField *)textField {
-    
+
     NSUInteger index = [self.inputFields indexOfObject:textField];
     if ([self.inputFieldsDelegates[index] respondsToSelector:@selector(textFieldShouldClear:)]) {
         return [self.inputFieldsDelegates[index] textFieldShouldClear:textField];
@@ -299,7 +325,7 @@ static const CGFloat AGRModalWindowNavigationBarHeight = 44.0f;
 }
 
 - (BOOL)textFieldShouldReturn:(UITextField *)textField {
-    
+
     NSUInteger index = [self.inputFields indexOfObject:textField];
     if ([self.inputFieldsDelegates[index] respondsToSelector:@selector(textFieldShouldReturn:)]) {
         self.shouldReturnActivated = [self.inputFieldsDelegates[index] textFieldShouldReturn:textField];
@@ -311,11 +337,10 @@ static const CGFloat AGRModalWindowNavigationBarHeight = 44.0f;
     }
 }
 
-
 #pragma mark - UITextViewDelegate methods
 
 - (void)textViewDidBeginEditing:(UITextView *)textView {
-    
+
     CGRect frameToScroll = [self.mainScrollView convertRect:textView.frame fromView:textView.superview];
     [self scrollRectToVisible:frameToScroll animated:YES];
 
@@ -323,20 +348,18 @@ static const CGFloat AGRModalWindowNavigationBarHeight = 44.0f;
     if ([self.inputFieldsDelegates[index] respondsToSelector:@selector(textViewDidBeginEditing:)]) {
         [self.inputFieldsDelegates[index] textViewDidBeginEditing:textView];
     }
-    
 }
 
 - (void)textViewDidChange:(UITextView *)textView {
-    
+
     NSUInteger index = [self.inputFields indexOfObject:textView];
     if ([self.inputFieldsDelegates[index] respondsToSelector:@selector(textViewDidChange:)]) {
         [self.inputFieldsDelegates[index] textViewDidChange:textView];
     }
-    
 }
 
 - (BOOL)textViewShouldBeginEditing:(UITextView *)textView {
-    
+
     NSUInteger index = [self.inputFields indexOfObject:textView];
     if ([self.inputFieldsDelegates[index] respondsToSelector:@selector(textViewShouldBeginEditing:)]) {
         return [self.inputFieldsDelegates[index] textViewShouldBeginEditing:textView];
@@ -346,7 +369,7 @@ static const CGFloat AGRModalWindowNavigationBarHeight = 44.0f;
 }
 
 - (BOOL)textViewShouldEndEditing:(UITextView *)textView {
-    
+
     NSUInteger index = [self.inputFields indexOfObject:textView];
     if ([self.inputFieldsDelegates[index] respondsToSelector:@selector(textViewShouldEndEditing:)]) {
         return [self.inputFieldsDelegates[index] textViewShouldEndEditing:textView];
@@ -356,7 +379,7 @@ static const CGFloat AGRModalWindowNavigationBarHeight = 44.0f;
 }
 
 - (void)textViewDidEndEditing:(UITextView *)textView {
-    
+
     NSUInteger index = [self.inputFields indexOfObject:textView];
     if ([self.inputFieldsDelegates[index] respondsToSelector:@selector(textViewDidEndEditing:)]) {
         [self.inputFieldsDelegates[index] textViewDidEndEditing:textView];
@@ -364,9 +387,10 @@ static const CGFloat AGRModalWindowNavigationBarHeight = 44.0f;
 }
 
 - (BOOL)textView:(UITextView *)textView shouldChangeTextInRange:(NSRange)range replacementText:(NSString *)text {
-    
+
     NSUInteger index = [self.inputFields indexOfObject:textView];
-    if ([self.inputFieldsDelegates[index] respondsToSelector:@selector(textView:shouldChangeTextInRange:replacementText:)]) {
+    if ([self.inputFieldsDelegates[index]
+            respondsToSelector:@selector(textView:shouldChangeTextInRange:replacementText:)]) {
         return [self.inputFieldsDelegates[index] textView:textView shouldChangeTextInRange:range replacementText:text];
     } else {
         return YES;
@@ -374,18 +398,17 @@ static const CGFloat AGRModalWindowNavigationBarHeight = 44.0f;
 }
 
 - (void)textViewDidChangeSelection:(UITextView *)textView {
-    
+
     NSUInteger index = [self.inputFields indexOfObject:textView];
     if ([self.inputFieldsDelegates[index] respondsToSelector:@selector(textViewDidChangeSelection:)]) {
         [self.inputFieldsDelegates[index] textViewDidChangeSelection:textView];
     }
 }
 
-
 #pragma mark - Other methods
 
 - (void)scrollRectToVisible:(CGRect)rect animated:(BOOL)animated {
-    
+
     if (rect.size.height > self.keyboardFrame.origin.y) {
         rect.size.height = self.keyboardFrame.origin.y;
     }

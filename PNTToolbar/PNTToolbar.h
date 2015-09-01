@@ -65,4 +65,8 @@
  */
 + (PNTToolbar *)defaultToolbar;
 
+- (void)setNextButtonTitle:(NSString *)nextTitle;
+- (void)setPreviousButtonTitle:(NSString *)previousTitle;
+
+
 @end
