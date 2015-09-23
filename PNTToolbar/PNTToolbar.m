@@ -215,7 +215,8 @@ static const CGFloat AGRModalWindowNavigationBarHeight = 44.0f;
     CGFloat navigationBarHeight = isLegacyOS ? [self superviewNavigationBarHeightForLegacyOS]
                                              : AGRModalWindowNavigationBarHeight;
 
-    CGFloat windowHeight = isLandscapeAndLegacy ? self.window.bounds.size.width : self.window.bounds.size.height;
+    CGFloat windowHeight = isLandscapeAndLegacy ? [[UIScreen mainScreen] bounds].size.width : [[UIScreen mainScreen] bounds].size.height;
+
     return windowHeight - superviewHeight - navigationBarHeight - statusBarHeight;
 }
 
