@@ -170,6 +170,8 @@ static const CGFloat AGRModalWindowNavigationBarHeight = 44.0f;
               [self scrollRectToVisible:frameToScroll animated:YES];
           }
         }];
+
+    [self updateButtonsAvailability];
 }
 
 - (CGFloat)keyboardHeightFromNotification:(NSNotification *)aNotification {
@@ -224,24 +226,45 @@ static const CGFloat AGRModalWindowNavigationBarHeight = 44.0f;
 
 - (void)barButtonItemPreviousTouchUpInside:(id)sender {
 
-    NSUInteger indexOfActiveTextFiled =
-        [self.inputFields indexOfObjectPassingTest:^BOOL(UITextField *textField, NSUInteger idx, BOOL *stop) {
-          return textField.isFirstResponder;
-        }];
-    if (indexOfActiveTextFiled > 0) {
-        [self.inputFields[indexOfActiveTextFiled - 1] becomeFirstResponder];
+    NSUInteger indexOfActiveTextField = [self indexOfActiveTextField];
+    if (indexOfActiveTextField > 0) {
+        [self.inputFields[indexOfActiveTextField - 1] becomeFirstResponder];
     }
+
+    [self updateButtonsAvailability];
 }
 
 - (void)barButtonItemNextTouchUpInside:(id)sender {
 
-    NSUInteger indexOfActiveTextFiled =
-        [self.inputFields indexOfObjectPassingTest:^BOOL(UITextField *textField, NSUInteger idx, BOOL *stop) {
-          return textField.isFirstResponder;
-        }];
-    if (indexOfActiveTextFiled < self.inputFields.count - 1) {
-        [self.inputFields[indexOfActiveTextFiled + 1] becomeFirstResponder];
+    NSUInteger indexOfActiveTextField = [self indexOfActiveTextField];
+    if ([self indexOfActiveTextField] < self.inputFields.count - 1) {
+        [self.inputFields[indexOfActiveTextField + 1] becomeFirstResponder];
     }
+
+    [self updateButtonsAvailability];
+}
+
+- (void)updateButtonsAvailability {
+
+    NSUInteger indexOfActiveTextField = [self indexOfActiveTextField];
+
+    self.barButtonItemPrevious.enabled = YES;
+    self.barButtonItemNext.enabled = YES;
+
+    if (indexOfActiveTextField == 0) {
+        self.barButtonItemPrevious.enabled = NO;
+    }
+    if (indexOfActiveTextField == self.inputFields.count-1) {
+        self.barButtonItemNext.enabled = NO;
+    }
+}
+
+- (NSUInteger)indexOfActiveTextField {
+    
+    NSUInteger result = [self.inputFields indexOfObjectPassingTest:^BOOL(UITextField *textField, NSUInteger idx, BOOL *stop) {
+        return textField.isFirstResponder;
+    }];
+    return result;
 }
 
 - (void)barButtonItemDoneTouchUpInside:(id)sender {
