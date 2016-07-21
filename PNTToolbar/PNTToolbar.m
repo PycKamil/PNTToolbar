@@ -227,7 +227,7 @@ static const CGFloat AGRModalWindowNavigationBarHeight = 44.0f;
 - (void)barButtonItemPreviousTouchUpInside:(id)sender {
 
     NSUInteger indexOfActiveTextField = [self indexOfActiveTextField];
-    if (indexOfActiveTextField > 0) {
+    if (indexOfActiveTextField > 0 && indexOfActiveTextField != NSNotFound) {
         [self.inputFields[indexOfActiveTextField - 1] becomeFirstResponder];
     }
 
@@ -237,7 +237,7 @@ static const CGFloat AGRModalWindowNavigationBarHeight = 44.0f;
 - (void)barButtonItemNextTouchUpInside:(id)sender {
 
     NSUInteger indexOfActiveTextField = [self indexOfActiveTextField];
-    if ([self indexOfActiveTextField] < self.inputFields.count - 1) {
+    if ([self indexOfActiveTextField] < self.inputFields.count - 1 && indexOfActiveTextField != NSNotFound) {
         [self.inputFields[indexOfActiveTextField + 1] becomeFirstResponder];
     }
 
@@ -251,10 +251,10 @@ static const CGFloat AGRModalWindowNavigationBarHeight = 44.0f;
     self.barButtonItemPrevious.enabled = YES;
     self.barButtonItemNext.enabled = YES;
 
-    if (indexOfActiveTextField == 0) {
+    if (indexOfActiveTextField == 0 || indexOfActiveTextField == NSNotFound) {
         self.barButtonItemPrevious.enabled = NO;
     }
-    if (indexOfActiveTextField == self.inputFields.count-1) {
+    if (indexOfActiveTextField == self.inputFields.count-1 || indexOfActiveTextField == NSNotFound) {
         self.barButtonItemNext.enabled = NO;
     }
 }
